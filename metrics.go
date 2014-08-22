@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mailgun/go-statsd-client/statsd"
@@ -13,8 +12,6 @@ import (
 )
 
 type MetricsService struct {
-	sync.Mutex
-
 	// config information
 	period time.Duration
 
@@ -63,9 +60,6 @@ func (ms *MetricsService) GetEmitPeriod() time.Duration {
 }
 
 func (ms *MetricsService) EmitGauge(bucket string, value int64) error {
-	ms.Lock()
-	defer ms.Unlock()
-
 	if ms.client == nil {
 		return fmt.Errorf("[-] Metrics service is not started")
 	}
@@ -80,9 +74,6 @@ func (ms *MetricsService) EmitGauge(bucket string, value int64) error {
 }
 
 func (ms *MetricsService) EmitTimer(bucket string, value time.Duration) error {
-	ms.Lock()
-	defer ms.Unlock()
-
 	if ms.client == nil {
 		return fmt.Errorf("[-] Metrics service is not started")
 	}
@@ -97,9 +88,6 @@ func (ms *MetricsService) EmitTimer(bucket string, value time.Duration) error {
 }
 
 func (ms *MetricsService) EmitCounter(bucket string, value int64) error {
-	ms.Lock()
-	defer ms.Unlock()
-
 	if ms.client == nil {
 		return fmt.Errorf("[-] Metrics service is not started")
 	}
