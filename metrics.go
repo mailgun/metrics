@@ -100,3 +100,4 @@ func (ms *MetricsService) EmitCounter(bucket string, value int64) error {
 
 	return nil
 }
+
