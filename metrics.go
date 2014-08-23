@@ -12,15 +12,12 @@ import (
 )
 
 type MetricsService struct {
-	// config information
-	period time.Duration
-
 	// statsd remote endpoint
 	client *statsd.Client
 	url    string
 }
 
-func NewMetricsService(host string, port int, period time.Duration, id string) (*MetricsService, error) {
+func NewMetricsService(host string, port int, id string) (*MetricsService, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -39,11 +36,9 @@ func NewMetricsService(host string, port int, period time.Duration, id string) (
 	ms := &MetricsService{
 		url:    hostPort,
 		client: client,
-		period: period,
 	}
 
-	log.Infof("[+] Started metrics service, emitting metrics to: %v [%v period]",
-		hostPort, period)
+	log.Infof("[+] Started metrics service, emitting metrics to: %v", hostPort)
 
 	return ms, nil
 }
@@ -52,16 +47,9 @@ func (ms *MetricsService) Stop() error {
 	return ms.client.Close()
 }
 
-func (ms *MetricsService) GetEmitPeriod() time.Duration {
-	if ms.period == 0 {
-		return 30 * time.Second
-	}
-	return ms.period
-}
-
 func (ms *MetricsService) EmitGauge(bucket string, value int64) error {
 	if ms.client == nil {
-		return fmt.Errorf("[-] Metrics service is not started")
+		return fmt.Errorf("metrics service is not started")
 	}
 
 	// send metric
@@ -75,7 +63,7 @@ func (ms *MetricsService) EmitGauge(bucket string, value int64) error {
 
 func (ms *MetricsService) EmitTimer(bucket string, value time.Duration) error {
 	if ms.client == nil {
-		return fmt.Errorf("[-] Metrics service is not started")
+		return fmt.Errorf("metrics service is not started")
 	}
 
 	// send metric in milliseconds (time.Duration is nanoseconds)
@@ -89,7 +77,7 @@ func (ms *MetricsService) EmitTimer(bucket string, value time.Duration) error {
 
 func (ms *MetricsService) EmitCounter(bucket string, value int64) error {
 	if ms.client == nil {
-		return fmt.Errorf("[-] Metrics service is not started")
+		return fmt.Errorf("metrics service is not started")
 	}
 
 	// send metric
