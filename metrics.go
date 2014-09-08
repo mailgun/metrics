@@ -1,4 +1,5 @@
-// Package metrics provides tools for emitting metrics to StatsD.
+// Package metrics provides tools for emitting metrics to different backends.
+// Currently only statsd is supported.
 package metrics
 
 import (
@@ -11,13 +12,19 @@ import (
 	"github.com/mailgun/gotools-log"
 )
 
-type MetricsService struct {
+type Metrics interface {
+	EmitGauge(string, int64) error
+	EmitTimer(string, time.Duration) error
+	EmitCounter(string, int64) error
+}
+
+type StatsdMetrics struct {
 	// statsd remote endpoint
 	client *statsd.Client
 	url    string
 }
 
-func NewMetricsService(host string, port int, id string) (*MetricsService, error) {
+func NewStatsdMetrics(host string, port int, id string) (*StatsdMetrics, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -33,21 +40,17 @@ func NewMetricsService(host string, port int, id string) (*MetricsService, error
 		return nil, err
 	}
 
-	ms := &MetricsService{
+	ms := &StatsdMetrics{
 		url:    hostPort,
 		client: client,
 	}
 
-	log.Infof("[+] Started metrics service, emitting metrics to: %v", hostPort)
+	log.Infof("Emitting statsd metrics to: %v", hostPort)
 
 	return ms, nil
 }
 
-func (ms *MetricsService) Stop() error {
-	return ms.client.Close()
-}
-
-func (ms *MetricsService) EmitGauge(bucket string, value int64) error {
+func (ms *StatsdMetrics) EmitGauge(bucket string, value int64) error {
 	if ms.client == nil {
 		return fmt.Errorf("metrics service is not started")
 	}
@@ -61,7 +64,7 @@ func (ms *MetricsService) EmitGauge(bucket string, value int64) error {
 	return nil
 }
 
-func (ms *MetricsService) EmitTimer(bucket string, value time.Duration) error {
+func (ms *StatsdMetrics) EmitTimer(bucket string, value time.Duration) error {
 	if ms.client == nil {
 		return fmt.Errorf("metrics service is not started")
 	}
@@ -75,7 +78,7 @@ func (ms *MetricsService) EmitTimer(bucket string, value time.Duration) error {
 	return nil
 }
 
-func (ms *MetricsService) EmitCounter(bucket string, value int64) error {
+func (ms *StatsdMetrics) EmitCounter(bucket string, value int64) error {
 	if ms.client == nil {
 		return fmt.Errorf("metrics service is not started")
 	}
@@ -87,4 +90,8 @@ func (ms *MetricsService) EmitCounter(bucket string, value int64) error {
 	}
 
 	return nil
+}
+
+func (ms *StatsdMetrics) Stop() error {
+	return ms.client.Close()
 }
