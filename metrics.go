@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/mailgun/go-statsd-client/statsd"
-	"github.com/mailgun/gotools-log"
+	"github.com/mailgun/log"
 )
 
 type Metrics interface {
