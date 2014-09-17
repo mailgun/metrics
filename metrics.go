@@ -20,7 +20,7 @@ type Metrics interface {
 
 type StatsdMetrics struct {
 	// statsd remote endpoint
-	client *statsd.Client
+	client statsd.Client
 	url    string
 }
 
