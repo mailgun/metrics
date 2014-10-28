@@ -68,7 +68,8 @@ func Metric(p ...string) string {
 }
 
 func Escape(in string) string {
-	return strings.Replace(in, ".", "_", -1)
+	in = strings.Replace(in, ".", "_", -1)
+	return strings.Replace(in, ":", "_", -1)
 }
 
 type client struct {
