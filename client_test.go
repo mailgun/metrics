@@ -80,6 +80,23 @@ func TestReportSystemMetrics(t *testing.T) {
 	}
 }
 
+func TestEscape(t *testing.T) {
+	vals := []struct {
+		V string
+		E string
+	}{
+		{V: "a", E: "a"},
+		{V: "a.b", E: "a_b"},
+		{V: "a:b", E: "a_b"},
+	}
+	for _, v := range vals {
+		escaped := Escape(v.V)
+		if escaped != v.E {
+			t.Fatalf("got '%s', expected '%s'", escaped, v.E)
+		}
+	}
+}
+
 func newUDPListener(addr string) (*net.UDPConn, error) {
 	l, err := net.ListenPacket("udp", addr)
 	if err != nil {
