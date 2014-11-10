@@ -3,7 +3,6 @@ package metrics
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -82,10 +81,6 @@ func (s *bufSender) timeToFlush() bool {
 func (s *bufSender) Write(data []byte) (int, error) {
 	s.m.Lock()
 	defer s.m.Unlock()
-
-	if len(data)+2 > s.maxBytes {
-		return 0, fmt.Errorf("datagram is too large")
-	}
 
 	// if we are approaching the limit, flush
 	if s.buf.Len() != 0 && (s.buf.Len()+len(data)+2 > s.maxBytes || s.timeToFlush()) {

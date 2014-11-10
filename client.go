@@ -234,22 +234,30 @@ func (s *client) SetPrefix(prefix string) {
 
 // submit formats the statsd event data, handles sampling, and prepares it,
 // and sends it to the server.
-func (s *client) submit(metricType string, stat interface{}, value int64, sign bool, sval string, rate float32) error {
+func (s *client) submit(metricType string, stat interface{}, value int64, sign bool, sval string, rate float32) (err error) {
 	if rate < 1 && rand.Float32() > rate {
 		return nil
 	}
 
 	var buf *bytes.Buffer
+	isBuffer := false
+	switch b := s.s.(type) {
+	case *bufSender:
+		buf = b.buf
+		isBuffer = true
+	default:
+		buf = &bytes.Buffer{}
+	}
+
 	switch m := stat.(type) {
 	case string:
-		buf = &bytes.Buffer{}
 		if s.prefix != "" {
 			buf.WriteString(s.prefix)
 			buf.WriteString(".")
 		}
 		buf.WriteString(escape(m))
 	case *metric:
-		buf = m.b
+		m.b.WriteTo(buf)
 	default:
 		return fmt.Errorf("Unexpected argument type: %T", stat)
 	}
@@ -274,6 +282,10 @@ func (s *client) submit(metricType string, stat interface{}, value int64, sign b
 		buf.WriteString(strconv.FormatFloat(float64(rate), 'f', -1, 32))
 	}
 
-	_, err := buf.WriteTo(s.s)
+	if isBuffer {
+		_, err = s.s.Write(nil)
+	} else {
+		_, err = buf.WriteTo(s.s)
+	}
 	return err
 }
