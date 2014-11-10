@@ -67,24 +67,24 @@ type Client interface {
 }
 
 // StatsdOptions allows tuning client for efficiency
-type StatsdOptions struct {
+type Options struct {
 	// UseBuffering turns on buffering of metrics what reduces amount of UDP packets
 	UseBuffering bool
-	// FlushBytes will trigger the packet send whenever accumulated buffer size will reach this value, default is 1460
+	// FlushBytes will trigger the packet send whenever accumulated buffer size will reach this value, default is 1440
 	FlushBytes int
 	// FlushPeriod will trigger periodic flushes in case of inactivity to avoid metric loss
 	FlushPeriod time.Duration
 }
 
-func NewStatsdWithOptions(addr, prefix string, opts StatsdOptions) (Client, error) {
-	s, err := newUdpSender(addr)
+func NewWithOptions(addr, prefix string, opts Options) (Client, error) {
+	s, err := newUDPSender(addr)
 	if err != nil {
 		return nil, err
 	}
 
 	if opts.UseBuffering {
 		if opts.FlushBytes == 0 {
-			opts.FlushBytes = 1460 // 1500(Ethernet MTU) - 60(Max UDP header size)
+			opts.FlushBytes = 1440 // 1500(Ethernet MTU) - 60(Max UDP header size)
 		}
 		if opts.FlushBytes < 128 {
 			return nil, fmt.Errorf("Too small flush bytes value, min is 128")
@@ -110,11 +110,11 @@ func NewStatsdWithOptions(addr, prefix string, opts StatsdOptions) (Client, erro
 	return client, nil
 }
 
-// NewStatsd returns a new Client, and an error.
+// New returns a new statsd Client, and an error.
 // addr is a string of the format "hostname:port", and must be parsable by net.ResolveUDPAddr.
 // prefix is the statsd client prefix. Can be "" if no prefix is desired.
-func NewStatsd(addr, prefix string) (Client, error) {
-	return NewStatsdWithOptions(addr, prefix, StatsdOptions{})
+func New(addr, prefix string) (Client, error) {
+	return NewWithOptions(addr, prefix, Options{})
 }
 
 type client struct {

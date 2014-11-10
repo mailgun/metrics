@@ -16,17 +16,17 @@ type sender interface {
 	Write(data []byte) (int, error)
 }
 
-type udpSender struct {
+type UDPSender struct {
 	// underlying connection
-	c net.PacketConn
+	c *net.UDPConn
 	// resolved udp address
 	ra *net.UDPAddr
 }
 
-func (s *udpSender) Write(data []byte) (int, error) {
+func (s *UDPSender) Write(data []byte) (int, error) {
 	// no need for locking here, as the underlying fdNet
 	// already serialized writes
-	n, err := s.c.(*net.UDPConn).WriteToUDP([]byte(data), s.ra)
+	n, err := s.c.WriteToUDP([]byte(data), s.ra)
 	if err != nil {
 		return 0, err
 	}
@@ -36,11 +36,11 @@ func (s *udpSender) Write(data []byte) (int, error) {
 	return n, nil
 }
 
-func (s *udpSender) Close() error {
+func (s *UDPSender) Close() error {
 	return s.c.Close()
 }
 
-func newUdpSender(addr string) (sender, error) {
+func newUDPSender(addr string) (sender, error) {
 	c, err := net.ListenPacket("udp", ":0")
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func newUdpSender(addr string) (sender, error) {
 		return nil, err
 	}
 
-	return &udpSender{ra: ra, c: c}, nil
+	return &UDPSender{ra: ra, c: c.(*net.UDPConn)}, nil
 }
 
 type bufSender struct {
@@ -83,12 +83,12 @@ func (s *bufSender) Write(data []byte) (int, error) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	if len(data)+2 > s.maxBytes {
+	if len(data)+1 > s.maxBytes {
 		return 0, fmt.Errorf("datagram is too large")
 	}
 
 	// if we are approaching the limit, flush
-	if s.buf.Len() != 0 && (s.buf.Len()+len(data)+2 > s.maxBytes || s.timeToFlush()) {
+	if s.buf.Len() != 0 && (s.buf.Len()+len(data)+1 > s.maxBytes || s.timeToFlush()) {
 		s.lastFlush = s.clock.UtcNow()
 		s.buf.WriteTo(s.s)
 		// always truncate regardless off errors
@@ -97,7 +97,7 @@ func (s *bufSender) Write(data []byte) (int, error) {
 
 	if len(data) != 0 {
 		s.buf.Write(data)
-		s.buf.WriteString("\n")
+		s.buf.WriteRune('\n')
 	}
 
 	// Never return errors, otherwise WriterTo will be confused.

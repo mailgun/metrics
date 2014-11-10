@@ -27,7 +27,7 @@ func (s *CSuite) TestClientPrefix(c *C) {
 	}
 
 	newClient := func(addr string) Client {
-		cl, err := NewStatsd(addr, "test")
+		cl, err := New(addr, "test")
 		c.Assert(err, IsNil)
 		return cl
 	}
@@ -43,7 +43,7 @@ func (s *CSuite) TestClientEmptyPrefix(c *C) {
 	}
 
 	newClient := func(addr string) Client {
-		cl, err := NewStatsd(addr, "")
+		cl, err := New(addr, "")
 		c.Assert(err, IsNil)
 		return cl
 	}
@@ -60,7 +60,7 @@ func (s *CSuite) TestEscapedMetrics(c *C) {
 	}
 
 	newClient := func(addr string) Client {
-		cl, err := NewStatsd(addr, "test")
+		cl, err := New(addr, "test")
 		c.Assert(err, IsNil)
 		return cl
 	}
@@ -106,7 +106,7 @@ prefix.counter:1|c
 	}
 
 	newClient := func(addr string) Client {
-		cl, err := NewStatsdWithOptions(addr, "prefix", StatsdOptions{UseBuffering: true, FlushBytes: 160, FlushPeriod: 100 * time.Second})
+		cl, err := NewWithOptions(addr, "prefix", Options{UseBuffering: true, FlushBytes: 160, FlushPeriod: 100 * time.Second})
 		c.Assert(err, IsNil)
 		return cl
 	}
@@ -121,7 +121,7 @@ func (s *CSuite) TestBufferedClientFlush(c *C) {
 	}
 
 	newClient := func(addr string) Client {
-		cl, err := NewStatsdWithOptions(addr, "prefix", StatsdOptions{UseBuffering: true, FlushPeriod: 100 * time.Millisecond})
+		cl, err := NewWithOptions(addr, "prefix", Options{UseBuffering: true, FlushPeriod: 100 * time.Millisecond})
 		c.Assert(err, IsNil)
 		return cl
 	}
@@ -185,7 +185,7 @@ func (s *CSuite) TestReportSystemMetrics(c *C) {
 	l, err := newUDPListener("127.0.0.1:0")
 	c.Assert(err, IsNil)
 	defer l.Close()
-	cl, err := NewStatsd(l.LocalAddr().String(), "runtime")
+	cl, err := New(l.LocalAddr().String(), "runtime")
 	for i := 0; i < 1000; i += 1 {
 		c.Assert(err, IsNil)
 		cl.ReportRuntimeMetrics("runtime.metrics", 1)
