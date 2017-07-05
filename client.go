@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
-
 	"runtime"
 	"strconv"
-
 	"sync"
 	"time"
 )
