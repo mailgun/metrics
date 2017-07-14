@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mailgun/timetools"
+	"github.com/mailgun/holster"
 )
 
 type sender interface {
@@ -59,7 +59,7 @@ type bufSender struct {
 	s           sender
 	buf         *bytes.Buffer
 	lastFlush   time.Time
-	clock       timetools.TimeProvider
+	clock       holster.Clock
 	maxBytes    int
 	flushPeriod time.Duration
 }
@@ -76,7 +76,7 @@ func (s *bufSender) Close() error {
 }
 
 func (s *bufSender) timeToFlush() bool {
-	return s.clock.UtcNow().After(s.lastFlush.Add(s.flushPeriod))
+	return s.clock.Now().UTC().After(s.lastFlush.Add(s.flushPeriod))
 }
 
 func (s *bufSender) Write(data []byte) (int, error) {
@@ -89,7 +89,7 @@ func (s *bufSender) Write(data []byte) (int, error) {
 
 	// if we are approaching the limit, flush
 	if s.buf.Len() != 0 && (s.buf.Len()+len(data)+1 > s.maxBytes || s.timeToFlush()) {
-		s.lastFlush = s.clock.UtcNow()
+		s.lastFlush = s.clock.Now().UTC()
 		s.buf.WriteTo(s.s)
 		// always truncate regardless off errors
 		s.buf.Truncate(0)
@@ -108,7 +108,7 @@ func (s *bufSender) Write(data []byte) (int, error) {
 func newBufSender(s sender, maxBytes int, flushPeriod time.Duration) (sender, error) {
 	b := &bytes.Buffer{}
 	b.Grow(maxBytes)
-	clock := &timetools.RealTime{}
+	clock := &holster.SystemClock{}
 	sdr := &bufSender{
 		m:           &sync.Mutex{},
 		s:           s,
@@ -116,7 +116,7 @@ func newBufSender(s sender, maxBytes int, flushPeriod time.Duration) (sender, er
 		buf:         b,
 		maxBytes:    maxBytes,
 		flushPeriod: flushPeriod,
-		lastFlush:   clock.UtcNow(),
+		lastFlush:   clock.Now().UTC(),
 	}
 	go sdr.flush()
 	return sdr, nil
